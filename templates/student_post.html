@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4><i class="fas fa-upload"></i> Submit a Question</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" id="postForm">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.jut_number.label(class="form-label fw-bold") }}
+                        {{ form.jut_number(class="form-control", placeholder="e.g., JUT 27") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.subject.label(class="form-label fw-bold") }}
+                        {{ form.subject(class="form-select") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.text_content.label(class="form-label fw-bold") }}
+                        {{ form.text_content(class="form-control", rows=4, placeholder="Optional explanation...") }}
+                    </div>
+
+                    <!-- Image Upload Area -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Question Image</label>
+                        <div class="row g-2">
+                            <!-- Gallery upload -->
+                            <div class="col-md-6">
+                                <input type="file" class="form-control" name="image" id="fileInput" accept="image/*">
+                                <small class="text-muted">Choose from gallery</small>
+                            </div>
+                            <!-- Camera button -->
+                            <div class="col-md-6">
+                                <button type="button" class="btn btn-outline-primary w-100" id="cameraBtn">
+                                    <i class="fas fa-camera"></i> Take Photo
+                                </button>
+                                <small class="text-muted">Open camera</small>
+                            </div>
+                        </div>
+                        <small class="text-muted">Supported: JPG, PNG, GIF</small>
+                    </div>
+
+                    <!-- Camera Preview & Controls (hidden initially) -->
+                    <div id="cameraSection" style="display: none;" class="mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <video id="video" autoplay playsinline style="width:100%; max-height:300px; background:#000;"></video>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-success" id="captureBtn"><i class="fas fa-camera-retro"></i> Capture</button>
+                                    <button type="button" class="btn btn-secondary" id="closeCameraBtn"><i class="fas fa-times"></i> Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Captured photo preview -->
+                    <div id="previewSection" style="display: none;" class="mb-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <img id="capturedImage" src="#" alt="Captured" style="max-width:100%; max-height:200px;">
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-danger btn-sm" id="clearPhotoBtn"><i class="fas fa-trash"></i> Clear</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-paper-plane"></i> {{ form.submit.label }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Camera JavaScript -->
+<script>
+    (function() {
+        const video = document.getElementById('video');
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        const fileInput = document.getElementById('fileInput');
+        const cameraBtn = document.getElementById('cameraBtn');
+        const cameraSection = document.getElementById('cameraSection');
+        const captureBtn = document.getElementById('captureBtn');
+        const closeCameraBtn = document.getElementById('closeCameraBtn');
+        const previewSection = document.getElementById('previewSection');
+        const capturedImage = document.getElementById('capturedImage');
+        const clearPhotoBtn = document.getElementById('clearPhotoBtn');
+
+        let stream = null;
+        let capturedBlob = null;
+
+        // Helper: set file input with a blob
+        function setFileInputFromBlob(blob, filename) {
+            const file = new File([blob], filename, { type: blob.type });
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+        }
+
+        // Helper: clear captured photo
+        function clearPhoto() {
+            capturedBlob = null;
+            previewSection.style.display = 'none';
+            capturedImage.src = '';
+            fileInput.value = ''; // clear file input
+        }
+
+        // Open camera
+        cameraBtn.addEventListener('click', async function() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+                video.srcObject = stream;
+                await video.play();
+                cameraSection.style.display = 'block';
+                // Hide preview if any
+                previewSection.style.display = 'none';
+            } catch (err) {
+                alert('Camera access denied or not available. Please use the file upload instead.');
+                console.error(err);
+            }
+        });
+
+        // Capture photo
+        captureBtn.addEventListener('click', function() {
+            if (!stream) return;
+            // Set canvas size to match video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(function(blob) {
+                if (blob) {
+                    capturedBlob = blob;
+                    // Show preview
+                    const url = URL.createObjectURL(blob);
+                    capturedImage.src = url;
+                    previewSection.style.display = 'block';
+                    // Attach to file input
+                    setFileInputFromBlob(blob, 'captured_photo.jpg');
+                    // Close camera
+                    closeCamera();
+                }
+            }, 'image/jpeg', 0.9);
+        });
+
+        // Close camera
+        function closeCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            video.srcObject = null;
+            cameraSection.style.display = 'none';
+        }
+
+        closeCameraBtn.addEventListener('click', closeCamera);
+
+        // Clear photo
+        clearPhotoBtn.addEventListener('click', function() {
+            clearPhoto();
+            // If camera is open, close it
+            if (stream) closeCamera();
+        });
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', function() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        });
+    })();
+</script>
+{% endblock %}

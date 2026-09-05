@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="alert alert-success text-center">
+    <i class="fas fa-check-circle fa-3x"></i>
+    <h4 class="mt-2">Thank you! Your question has been submitted.</h4>
+    <p>Lecturers will review it shortly.</p>
+</div>
+<a href="{{ url_for('student.post_question') }}" class="btn btn-secondary"><i class="fas fa-plus"></i> Submit Another</a>
+{% endblock %}

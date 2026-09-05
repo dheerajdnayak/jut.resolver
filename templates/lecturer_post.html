@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white">
+        <h4>JUT #{{ post.jut_number }}</h4>
+    </div>
+    <div class="card-body">
+        <p><strong>Subject:</strong> {{ post.subject.capitalize() }}</p>
+        <p><strong>Submitted:</strong> {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+        {% if post.text_content %}
+            <div class="card mb-3 bg-light">
+                <div class="card-body text-black">{{ post.text_content }}</div>
+            </div>
+        {% endif %}
+        {% if post.image_filename %}
+            <div class="mb-3 text-center">
+                <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" class="img-fluid rounded" style="max-height: 400px;" alt="Question image">
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header bg-success text-white">
+        <h5><i class="fas fa-vote-yea"></i> Your Vote</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            {{ vote_form.hidden_tag() }}
+            <div class="mb-3">
+                <label class="form-label fw-bold">Select option</label>
+                <div class="col">
+                    {% for subfield in vote_form.option %}
+                        <div class="col-md-4 col-sm-6">
+                            <div class="form-check">
+                                {{ subfield(class="form-check-input") }}
+                                {{ subfield.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="mb-3" id="numericalInput" style="display: none;">
+                {{ vote_form.numerical_value.label(class="form-label fw-bold") }}
+                {{ vote_form.numerical_value(class="form-control", step="any", placeholder="Enter numerical answer") }}
+            </div>
+            <button type="submit" name="vote_submit" class="btn btn-success">
+                <i class="fas fa-check"></i> {{ vote_form.submit.label }}
+            </button>
+            {% if current_vote %}
+                <span class="ms-2 text-muted">(current vote: {{ current_vote.option }}{% if current_vote.option == 'NUMERICAL' %} = {{ current_vote.numerical_value }}{% endif %})</span>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header bg-info text-white">
+        <h5><i class="fas fa-comments"></i> Discussion</h5>
+    </div>
+    <div class="card-body">
+        <div class="chat-box" style="max-height: 300px; overflow-y: auto; background: var(--bs-body-bg); padding: 10px; border-radius: 5px;">
+            {% for msg in messages %}
+                <div class="mb-2">
+                    <strong>{{ msg.lecturer.name }}</strong> <small class="text-muted">{{ msg.created_at.strftime('%H:%M') }}</small><br>
+                    {{ msg.message }}
+                </div>
+            {% else %}
+                <p class="text-muted">No messages yet.</p>
+            {% endfor %}
+        </div>
+        <form method="POST" class="mt-3">
+            {{ chat_form.hidden_tag() }}
+            <div class="mb-2">
+                {{ chat_form.message(class="form-control", rows=2, placeholder="Type your message...") }}
+            </div>
+            <button type="submit" name="chat_submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> {{ chat_form.submit.label }}</button>
+        </form>
+    </div>
+</div>
+
+<a href="{{ url_for('lecturer.dashboard') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+
+<script>
+    // Show/hide numerical input based on radio selection
+    document.addEventListener('DOMContentLoaded', function() {
+        const optionRadios = document.querySelectorAll('input[name="option"]');
+        const numericalDiv = document.getElementById('numericalInput');
+        function toggleNumerical() {
+            const selected = document.querySelector('input[name="option"]:checked');
+            if (selected && selected.value === 'NUMERICAL') {
+                numericalDiv.style.display = 'block';
+            } else {
+                numericalDiv.style.display = 'none';
+            }
+        }
+        optionRadios.forEach(radio => radio.addEventListener('change', toggleNumerical));
+        toggleNumerical(); // initial state
+    });
+</script>
+{% endblock %}

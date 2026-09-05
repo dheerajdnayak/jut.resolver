@@ -1,0 +1,12 @@
+/* Any custom styles */
+body {
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.card {
+    margin-bottom: 1.5rem;
+}
+.chat-box {
+    background-color: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+}
+/* Dark mode overrides are handled by Bootstrap's data-bs-theme */
