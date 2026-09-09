@@ -9,7 +9,7 @@
         <p><strong>Submitted:</strong> {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
         {% if post.text_content %}
             <div class="card mb-3 bg-light">
-                <div class="card-body text-black">{{ post.text_content }}</div>
+                <div class="card-body">{{ post.text_content }}</div>
             </div>
         {% endif %}
         {% if post.image_filename %}
@@ -20,6 +20,27 @@
     </div>
 </div>
 
+<!-- Public Comments (visible to lecturers too) -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-secondary text-white">
+        <h5><i class="fas fa-users"></i> Public Comments</h5>
+    </div>
+    <div class="card-body">
+        <div id="public-comments" style="max-height: 200px; overflow-y: auto; background: var(--bs-body-bg); padding: 10px; border-radius: 5px; border: 1px solid var(--bs-border-color);">
+            {% for comment in public_comments %}
+                <div class="mb-2">
+                    <strong>{{ comment.name }}</strong> <small class="text-muted">{{ comment.created_at.strftime('%H:%M') }}</small><br>
+                    {{ comment.text }}
+                </div>
+            {% else %}
+                <p class="text-muted">No public comments yet.</p>
+            {% endfor %}
+        </div>
+        <!-- Note: students add comments on the main page, not here -->
+    </div>
+</div>
+
+<!-- Lecturer Voting -->
 <div class="card shadow mb-4">
     <div class="card-header bg-success text-white">
         <h5><i class="fas fa-vote-yea"></i> Your Vote</h5>
@@ -29,7 +50,7 @@
             {{ vote_form.hidden_tag() }}
             <div class="mb-3">
                 <label class="form-label fw-bold">Select option</label>
-                <div class="col">
+                <div class="row">
                     {% for subfield in vote_form.option %}
                         <div class="col-md-4 col-sm-6">
                             <div class="form-check">
@@ -54,12 +75,13 @@
     </div>
 </div>
 
+<!-- Lecturer Discussion (real-time) -->
 <div class="card shadow mb-4">
     <div class="card-header bg-info text-white">
-        <h5><i class="fas fa-comments"></i> Discussion</h5>
+        <h5><i class="fas fa-comments"></i> Lecturer Discussion</h5>
     </div>
     <div class="card-body">
-        <div class="chat-box" style="max-height: 300px; overflow-y: auto; background: var(--bs-body-bg); padding: 10px; border-radius: 5px;">
+        <div id="lecturer-chat" style="max-height: 300px; overflow-y: auto; background: var(--bs-body-bg); padding: 10px; border-radius: 5px; border: 1px solid var(--bs-border-color);">
             {% for msg in messages %}
                 <div class="mb-2">
                     <strong>{{ msg.lecturer.name }}</strong> <small class="text-muted">{{ msg.created_at.strftime('%H:%M') }}</small><br>
@@ -69,10 +91,10 @@
                 <p class="text-muted">No messages yet.</p>
             {% endfor %}
         </div>
-        <form method="POST" class="mt-3">
+        <form method="POST" class="mt-3" id="lecturerChatForm">
             {{ chat_form.hidden_tag() }}
             <div class="mb-2">
-                {{ chat_form.message(class="form-control", rows=2, placeholder="Type your message...") }}
+                {{ chat_form.message(class="form-control", rows=2, placeholder="Type your message...", id="lecturerMsg") }}
             </div>
             <button type="submit" name="chat_submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> {{ chat_form.submit.label }}</button>
         </form>
@@ -82,7 +104,7 @@
 <a href="{{ url_for('lecturer.dashboard') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
 
 <script>
-    // Show/hide numerical input based on radio selection
+    // Show/hide numerical input
     document.addEventListener('DOMContentLoaded', function() {
         const optionRadios = document.querySelectorAll('input[name="option"]');
         const numericalDiv = document.getElementById('numericalInput');
@@ -95,7 +117,72 @@
             }
         }
         optionRadios.forEach(radio => radio.addEventListener('change', toggleNumerical));
-        toggleNumerical(); // initial state
+        toggleNumerical();
     });
+</script>
+
+<!-- Socket.IO for real-time lecturer messages and public comments -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+    (function() {
+        const socket = io();
+        const postId = '{{ post.id }}';
+
+        // Join the post room
+        socket.emit('join_post', { post_id: postId });
+
+        // ---- Public comments ----
+        socket.on('new_public_comment', function(data) {
+            if (data.post_id != postId) return;
+            const container = document.getElementById('public-comments');
+            const noMsg = container.querySelector('p.text-muted');
+            if (noMsg) noMsg.remove();
+            const div = document.createElement('div');
+            div.className = 'mb-2';
+            div.innerHTML = `<strong>${data.name}</strong> <small class="text-muted">${data.created_at}</small><br>${data.text}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        });
+
+        // ---- Lecturer messages ----
+        // We'll intercept the form submission to send via socket, and also handle normal POST fallback.
+        const chatForm = document.getElementById('lecturerChatForm');
+        const msgInput = document.getElementById('lecturerMsg');
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // prevent normal POST
+            const msg = msgInput.value.trim();
+            if (!msg) return;
+            // Emit via socket
+            socket.emit('new_lecturer_message', {
+                post_id: postId,
+                message: msg
+            });
+            // Clear input
+            msgInput.value = '';
+            // Optionally display own message immediately (will be broadcast back, but we can also optimistic append)
+            // We'll rely on broadcast; but include_self=False, so we'll add it ourselves optimistically.
+            const container = document.getElementById('lecturer-chat');
+            const noMsg = container.querySelector('p.text-muted');
+            if (noMsg) noMsg.remove();
+            const div = document.createElement('div');
+            div.className = 'mb-2';
+            div.innerHTML = `<strong>{{ current_user.name }}</strong> <small class="text-muted">just now</small><br>${msg}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        });
+
+        // Listen for new lecturer messages (from others)
+        socket.on('new_lecturer_message', function(data) {
+            if (data.post_id != postId) return;
+            const container = document.getElementById('lecturer-chat');
+            const noMsg = container.querySelector('p.text-muted');
+            if (noMsg) noMsg.remove();
+            const div = document.createElement('div');
+            div.className = 'mb-2';
+            div.innerHTML = `<strong>${data.lecturer_name}</strong> <small class="text-muted">${data.created_at}</small><br>${data.message}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        });
+    })();
 </script>
 {% endblock %}

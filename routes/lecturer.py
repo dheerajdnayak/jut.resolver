@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, current_app
 from flask_login import login_user, logout_user, login_required, current_user
-from models import User, Post, Vote, ChatMessage
+from models import User, Post, Vote, ChatMessage, PublicComment
 from forms import LecturerLoginForm, LecturerSignupForm, VoteForm, ChatMessageForm
 from extensions import db
 from sqlalchemy import func
@@ -81,20 +81,17 @@ def view_post(post_id):
     # Vote
     vote_form = VoteForm()
     if vote_form.validate_on_submit() and 'vote_submit' in request.form:
-        # Check if NUMERICAL and value is required
         if vote_form.option.data == 'NUMERICAL' and vote_form.numerical_value.data is None:
             flash('Please enter a numerical value for NUMERICAL vote.', 'danger')
             return redirect(url_for('lecturer.view_post', post_id=post.id))
 
         existing_vote = Vote.query.filter_by(post_id=post.id, lecturer_id=current_user.id).first()
         if existing_vote:
-            # Update existing vote
             existing_vote.option = vote_form.option.data
             existing_vote.numerical_value = vote_form.numerical_value.data
             db.session.commit()
             flash('Your vote has been updated.', 'success')
         else:
-            # New vote
             vote = Vote(
                 post_id=post.id,
                 lecturer_id=current_user.id,
@@ -108,8 +105,9 @@ def view_post(post_id):
 
     current_vote = Vote.query.filter_by(post_id=post.id, lecturer_id=current_user.id).first()
     messages = ChatMessage.query.filter_by(post_id=post.id).order_by(ChatMessage.created_at.asc()).all()
+    # Load public comments
+    public_comments = PublicComment.query.filter_by(post_id=post.id).order_by(PublicComment.created_at.asc()).all()
 
-    # Pre-populate vote form if current vote exists
     if current_vote:
         vote_form.option.data = current_vote.option
         vote_form.numerical_value.data = current_vote.numerical_value
@@ -119,4 +117,5 @@ def view_post(post_id):
                            chat_form=chat_form,
                            vote_form=vote_form,
                            current_vote=current_vote,
-                           messages=messages)
+                           messages=messages,
+                           public_comments=public_comments)

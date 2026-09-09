@@ -9,4 +9,13 @@ body {
     background-color: var(--bs-body-bg);
     border: 1px solid var(--bs-border-color);
 }
+
+.card-body {
+    flex: 1 1 auto;
+    padding: var(--bs-card-spacer-y) var(--bs-card-spacer-x);
+    color: var(--bs-card-color);
+    background: var(--bs-card-bg);
+    border: 1px solid white;
+    outline: 1px solid white;
+}
 /* Dark mode overrides are handled by Bootstrap's data-bs-theme */

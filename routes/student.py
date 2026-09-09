@@ -38,10 +38,11 @@ def post_question():
         db.session.add(post)
         db.session.commit()
         flash('Your question has been submitted successfully!', 'success')
-        return redirect(url_for('student.thank_you'))
+        return redirect(url_for('index'))   # go to main page
 
     return render_template('student_post.html', form=form)
 
+# we don't need thank_you anymore; but can keep
 @student_bp.route('/thank-you')
 def thank_you():
     return render_template('student_thanks.html')

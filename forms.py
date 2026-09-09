@@ -57,3 +57,9 @@ class AdminLoginForm(FlaskForm):
     username = StringField('Admin Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Login')
+
+# NEW: public comment form
+class PublicCommentForm(FlaskForm):
+    name = StringField('Your name (optional)', validators=[Length(max=100)])
+    text = TextAreaField('Comment', validators=[DataRequired(), Length(max=500)])
+    submit = SubmitField('Post Comment')
