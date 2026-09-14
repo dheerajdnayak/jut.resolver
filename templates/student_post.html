@@ -4,14 +4,15 @@
     <div class="col-md-8">
         <div class="card shadow">
             <div class="card-header bg-primary text-white">
-                <h4><i class="fas fa-upload"></i> Submit a Question</h4>
+                <h4 class="mb-0"><i class="fas fa-upload"></i> Submit a Question</h4>
             </div>
             <div class="card-body">
+                <div id="submit-alert"></div>
                 <form method="POST" enctype="multipart/form-data" id="postForm">
                     {{ form.hidden_tag() }}
                     <div class="mb-3">
                         {{ form.jut_number.label(class="form-label fw-bold") }}
-                        {{ form.jut_number(class="form-control", placeholder="e.g., JUT 27") }}
+                        {{ form.jut_number(class="form-control", placeholder="e.g., JUT-2026-001") }}
                     </div>
                     <div class="mb-3">
                         {{ form.subject.label(class="form-label fw-bold") }}
@@ -22,16 +23,13 @@
                         {{ form.text_content(class="form-control", rows=4, placeholder="Optional explanation...") }}
                     </div>
 
-                    <!-- Image Upload Area -->
                     <div class="mb-3">
                         <label class="form-label fw-bold">Question Image</label>
                         <div class="row g-2">
-                            <!-- Gallery upload -->
                             <div class="col-md-6">
                                 <input type="file" class="form-control" name="image" id="fileInput" accept="image/*">
                                 <small class="text-muted">Choose from gallery</small>
                             </div>
-                            <!-- Camera button -->
                             <div class="col-md-6">
                                 <button type="button" class="btn btn-outline-primary w-100" id="cameraBtn">
                                     <i class="fas fa-camera"></i> Take Photo
@@ -42,32 +40,26 @@
                         <small class="text-muted">Supported: JPG, PNG, GIF</small>
                     </div>
 
-                    <!-- Camera Preview & Controls (hidden initially) -->
-                    <div id="cameraSection" style="display: none;" class="mb-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <video id="video" autoplay playsinline style="width:100%; max-height:300px; background:#000;"></video>
-                                <div class="mt-2">
-                                    <button type="button" class="btn btn-success" id="captureBtn"><i class="fas fa-camera-retro"></i> Capture</button>
-                                    <button type="button" class="btn btn-secondary" id="closeCameraBtn"><i class="fas fa-times"></i> Close</button>
-                                </div>
+                    <div id="cameraSection" style="display:none;" class="mb-3">
+                        <div class="card"><div class="card-body">
+                            <video id="video" autoplay playsinline style="width:100%;max-height:300px;background:#000;"></video>
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-success" id="captureBtn"><i class="fas fa-camera-retro"></i> Capture</button>
+                                <button type="button" class="btn btn-secondary" id="closeCameraBtn"><i class="fas fa-times"></i> Close</button>
                             </div>
-                        </div>
+                        </div></div>
                     </div>
 
-                    <!-- Captured photo preview -->
-                    <div id="previewSection" style="display: none;" class="mb-3">
-                        <div class="card">
-                            <div class="card-body text-center">
-                                <img id="capturedImage" src="#" alt="Captured" style="max-width:100%; max-height:200px;">
-                                <div class="mt-2">
-                                    <button type="button" class="btn btn-danger btn-sm" id="clearPhotoBtn"><i class="fas fa-trash"></i> Clear</button>
-                                </div>
+                    <div id="previewSection" style="display:none;" class="mb-3">
+                        <div class="card"><div class="card-body text-center">
+                            <img id="capturedImage" src="#" alt="Captured" style="max-width:100%;max-height:200px;">
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-danger btn-sm" id="clearPhotoBtn"><i class="fas fa-trash"></i> Clear</button>
                             </div>
-                        </div>
+                        </div></div>
                     </div>
 
-                    <button type="submit" class="btn btn-success w-100">
+                    <button type="submit" class="btn btn-success w-100" id="submitBtn">
                         <i class="fas fa-paper-plane"></i> {{ form.submit.label }}
                     </button>
                 </form>
@@ -76,7 +68,7 @@
     </div>
 </div>
 
-<!-- Camera JavaScript -->
+<!-- Camera script (unchanged) -->
 <script>
     (function() {
         const video = document.getElementById('video');
@@ -90,88 +82,107 @@
         const previewSection = document.getElementById('previewSection');
         const capturedImage = document.getElementById('capturedImage');
         const clearPhotoBtn = document.getElementById('clearPhotoBtn');
-
         let stream = null;
-        let capturedBlob = null;
 
-        // Helper: set file input with a blob
         function setFileInputFromBlob(blob, filename) {
             const file = new File([blob], filename, { type: blob.type });
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            fileInput.files = dataTransfer.files;
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            fileInput.files = dt.files;
         }
 
-        // Helper: clear captured photo
-        function clearPhoto() {
-            capturedBlob = null;
-            previewSection.style.display = 'none';
-            capturedImage.src = '';
-            fileInput.value = ''; // clear file input
-        }
-
-        // Open camera
-        cameraBtn.addEventListener('click', async function() {
+        cameraBtn.addEventListener('click', async () => {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
                 video.srcObject = stream;
                 await video.play();
                 cameraSection.style.display = 'block';
-                // Hide preview if any
                 previewSection.style.display = 'none';
             } catch (err) {
-                alert('Camera access denied or not available. Please use the file upload instead.');
-                console.error(err);
+                alert('Camera not available. Please use the file upload instead.');
             }
         });
 
-        // Capture photo
-        captureBtn.addEventListener('click', function() {
+        captureBtn.addEventListener('click', () => {
             if (!stream) return;
-            // Set canvas size to match video
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob(function(blob) {
-                if (blob) {
-                    capturedBlob = blob;
-                    // Show preview
-                    const url = URL.createObjectURL(blob);
-                    capturedImage.src = url;
-                    previewSection.style.display = 'block';
-                    // Attach to file input
-                    setFileInputFromBlob(blob, 'captured_photo.jpg');
-                    // Close camera
-                    closeCamera();
-                }
+            canvas.toBlob(blob => {
+                if (!blob) return;
+                capturedImage.src = URL.createObjectURL(blob);
+                previewSection.style.display = 'block';
+                setFileInputFromBlob(blob, 'captured_photo.jpg');
+                closeCamera();
             }, 'image/jpeg', 0.9);
         });
 
-        // Close camera
         function closeCamera() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                stream = null;
-            }
+            if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
             video.srcObject = null;
             cameraSection.style.display = 'none';
         }
-
         closeCameraBtn.addEventListener('click', closeCamera);
-
-        // Clear photo
-        clearPhotoBtn.addEventListener('click', function() {
-            clearPhoto();
-            // If camera is open, close it
+        clearPhotoBtn.addEventListener('click', () => {
+            fileInput.value = '';
+            capturedImage.src = '';
+            previewSection.style.display = 'none';
             if (stream) closeCamera();
         });
-
-        // Clean up on page unload
-        window.addEventListener('beforeunload', function() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-        });
+        window.addEventListener('beforeunload', () => { if (stream) stream.getTracks().forEach(t => t.stop()); });
     })();
+</script>
+
+<!-- AJAX submit (document-level, so it always attaches) -->
+<script>
+    document.addEventListener('submit', async function(e) {
+        const form = e.target;
+        // Only handle the student submission form
+        if (!form || form.id !== 'postForm') return;
+        e.preventDefault();                // 🚫 stop page refresh
+
+        const submitBtn = document.getElementById('submitBtn');
+        const alertBox  = document.getElementById('submit-alert');
+        const originalLabel = submitBtn.innerHTML;
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting…';
+        alertBox.innerHTML = '';
+
+        try {
+            const fd = new FormData(form);
+            const res = await fetch('/api/submit', {
+                method: 'POST',
+                body: fd,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await res.json();
+            if (data.ok) {
+                alertBox.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        Question <strong>JUT #${data.post.jut_number}</strong> submitted!
+                        <a href="/" class="alert-link">View on feed →</a>
+                    </div>`;
+                form.reset();
+                const preview = document.getElementById('previewSection');
+                if (preview) preview.style.display = 'none';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                setTimeout(() => { alertBox.innerHTML = ''; }, 8000);
+            } else {
+                const errs = data.errors || {};
+                let msg = 'Please check:<ul>';
+                Object.keys(errs).forEach(k => { msg += `<li>${k}: ${errs[k].join(', ')}</li>`; });
+                msg += '</ul>';
+                alertBox.innerHTML = `<div class="alert alert-danger">${msg}</div>`;
+            }
+        } catch (err) {
+            console.error(err);
+            alertBox.innerHTML = '<div class="alert alert-danger">Something went wrong. Please try again.</div>';
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalLabel;
+        }
+    });
 </script>
 {% endblock %}

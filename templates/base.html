@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>JUT Resolver</title>
 
-    <!-- Fonts: Fraunces (display serif) + Inter Tight (UI sans) + JetBrains Mono (numerals) -->
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter+Tight:ital,wght@0,300..700;1,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -13,15 +13,29 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Socket.IO must load BEFORE any page script -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 </head>
 <body>
+    <!-- Initialise socket BEFORE content scripts run -->
+    <script>
+        window.appSocket = io();
+        window.appSocket.on('connect',       () => console.log('[socket] connected', window.appSocket.id));
+        window.appSocket.on('disconnect',    () => console.log('[socket] disconnected'));
+        window.appSocket.on('connect_error', err => console.error('[socket] error', err));
+    </script>
+
+    <!-- ============================= -->
+    <!-- NAVBAR                        -->
+    <!-- ============================= -->
     <nav class="navbar navbar-expand-lg">
         <div class="container-xl">
             <a class="navbar-brand" href="{{ url_for('index') }}">
-                <span class="brand-mark">J</span>
+                <span class="brand-mark"></span>
                 <span>JUT Resolver</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
@@ -50,6 +64,9 @@
         </div>
     </nav>
 
+    <!-- ============================= -->
+    <!-- MAIN CONTENT                  -->
+    <!-- ============================= -->
     <main class="container-xl py-5">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -64,6 +81,9 @@
         {% block content %}{% endblock %}
     </main>
 
+    <!-- ============================= -->
+    <!-- FOOTER                        -->
+    <!-- ============================= -->
     <footer class="footer">
         <div class="container-xl">
             <p class="mb-0">JUT Resolver · built for clarity</p>
@@ -74,24 +94,49 @@
     <script>
         (function() {
             const toggle = document.getElementById('darkModeToggle');
-            const html = document.documentElement;
-            const icon = toggle.querySelector('i');
-
-            const saved = localStorage.getItem('theme');
+            const html   = document.documentElement;
+            const icon   = toggle.querySelector('i');
+            const saved  = localStorage.getItem('theme');
             if (saved) {
                 html.setAttribute('data-bs-theme', saved);
                 if (saved === 'dark') icon.classList.replace('fa-moon', 'fa-sun');
             }
-
             toggle.addEventListener('click', function() {
-                const current = html.getAttribute('data-bs-theme');
-                const next = current === 'dark' ? 'light' : 'dark';
+                const next = html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
                 html.setAttribute('data-bs-theme', next);
                 localStorage.setItem('theme', next);
                 if (next === 'dark') icon.classList.replace('fa-moon', 'fa-sun');
-                else icon.classList.replace('fa-sun', 'fa-moon');
+                else                 icon.classList.replace('fa-sun', 'fa-moon');
             });
         })();
     </script>
+
+<script>
+    // Universal fade helper — call anywhere
+    window.uiFade = (function() {
+        function inEl(el, mode) {
+            if (!el) return;
+            el.classList.remove('fade-in', 'fade-in-up', 'fade-out');
+            void el.offsetWidth;                    // force reflow to restart animation
+            el.classList.add(mode === 'up' ? 'fade-in-up' : 'fade-in');
+        }
+        function outEl(el, cb) {
+            if (!el || el.dataset.fadingOut) return;
+            el.dataset.fadingOut = '1';
+            el.style.pointerEvents = 'none';
+            el.classList.add('fade-out');
+            let done = false;
+            const finish = () => {
+                if (done) return;
+                done = true;
+                el.remove();
+                cb && cb();
+            };
+            el.addEventListener('animationend', finish, { once: true });
+            setTimeout(finish, 400);                // safety net
+        }
+        return { in: inEl, out: outEl };
+    })();
+</script>
 </body>
 </html>

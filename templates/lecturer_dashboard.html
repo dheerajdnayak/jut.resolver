@@ -1,23 +1,68 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2 class="mb-3"><i class="fas fa-chalkboard-teacher"></i> Your Subject: {{ current_user.subject.capitalize() }}</h2>
-<h4>Active Questions</h4>
-{% if posts %}
-    <div class="list-group">
-    {% for post in posts %}
-        <a href="{{ url_for('lecturer.view_post', post_id=post.id) }}" class="list-group-item list-group-item-action">
-            <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1">JUT #{{ post.jut_number }}</h5>
-                <small>{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
-            </div>
-            <p class="mb-1">{{ post.text_content[:100] if post.text_content else 'No text' }}</p>
-            {% if post.image_filename %}
-                <span class="badge bg-secondary"><i class="fas fa-image"></i> Has image</span>
-            {% endif %}
-        </a>
-    {% endfor %}
-    </div>
+<h2 class="mb-3"><i class="fas fa-chalkboard-teacher"></i> {{ current_user.subject.capitalize() }} · {{ current_user.name }}</h2>
+<p class="lead">Questions appear here in real time.</p>
+
+<div id="lecturer-posts">
+{% for post in posts %}
+    <a href="{{ url_for('lecturer.view_post', post_id=post.id) }}"
+       class="list-group-item list-group-item-action mb-2 post-item"
+       data-post-id="{{ post.id }}" id="lpost-{{ post.id }}"
+       style="border-radius: 10px; border: 1px solid var(--border);">
+        <div class="d-flex w-100 justify-content-between">
+            <h5 class="mb-1">JUT #{{ post.jut_number }}</h5>
+            <small class="text-muted">{{ post.created_at.strftime('%b %d, %H:%M') }}</small>
+        </div>
+        <p class="mb-1">{% if post.text_content %}{{ post.text_content[:120] }}{% else %}<em class="text-muted">No text</em>{% endif %}</p>
+        {% if post.image_filename %}<span class="badge bg-secondary"><i class="fas fa-image"></i> Has image</span>{% endif %}
+    </a>
 {% else %}
-    <div class="alert alert-info">No active questions for your subject.</div>
-{% endif %}
+    <div class="alert alert-info" id="empty-state">No active questions yet.</div>
+{% endfor %}
+</div>
+
+<script>
+(function() {
+    const socket = window.appSocket;
+    const subject = "{{ current_user.subject }}";
+    socket.emit('join_rooms', { rooms: ['subject_' + subject] });
+
+    socket.on('new_post', function(p) {
+        if (p.subject !== subject) return;
+        const wrap = document.getElementById('lecturer-posts');
+        const empty = document.getElementById('empty-state');
+        if (empty) empty.remove();
+        if (document.getElementById('lpost-' + p.id)) return;
+
+        const a = document.createElement('a');
+        a.href = '/lecturer/post/' + p.id;
+        a.className = 'list-group-item list-group-item-action mb-2 post-item';
+        a.dataset.postId = p.id;
+        a.id = 'lpost-' + p.id;
+        a.style.cssText = 'border-radius:10px; border:1px solid var(--border); animation: fadeInUp .4s ease both;';
+        a.innerHTML = `
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">JUT #${p.jut_number}</h5>
+                <small class="text-muted">just now</small>
+            </div>
+            <p class="mb-1">${p.text_content ? escapeHtml(p.text_content.substring(0,120)) : '<em class="text-muted">No text</em>'}</p>
+            ${p.image_filename ? '<span class="badge bg-secondary"><i class="fas fa-image"></i> Has image</span>' : ''}
+        `;
+        wrap.prepend(a);
+    });
+
+    socket.on('post_status_changed', d => {
+        const el = document.getElementById('lpost-' + d.post_id);
+        if (el) el.remove();
+    });
+    socket.on('post_deleted', d => {
+        const el = document.getElementById('lpost-' + d.post_id);
+        if (el) el.remove();
+    });
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+})();
+</script>
 {% endblock %}

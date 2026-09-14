@@ -1,88 +1,320 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2><i class="fas fa-globe"></i> All Questions</h2>
-<p class="text-muted">Public comments appear instantly – no refresh needed!</p>
+<div class="feed-header mb-4">
+    <h1>The <em style="font-variation-settings:'SOFT' 60,'WONK' 1;">feed</em></h1>
+    <p class="lead">Every question, live. Click a card to expand.</p>
+</div>
 
-{% for post in posts %}
-    <div class="card shadow mb-4" id="post-{{ post.id }}">
-        <div class="card-header bg-primary text-white">
-            <h5>JUT #{{ post.jut_number }} <small class="text-light">({{ post.subject.capitalize() }})</small></h5>
+<!-- Sticky toolbar: filters + search -->
+<div class="feed-toolbar">
+    <div class="feed-toolbar-inner">
+        <div class="feed-filter-chips">
+            <button class="filter-chip active" data-filter="all">All</button>
+            <button class="filter-chip" data-filter="phy">Physics</button>
+            <button class="filter-chip" data-filter="chem">Chemistry</button>
+            <button class="filter-chip" data-filter="maths">Maths</button>
         </div>
-        <div class="card-body">
-            <p><strong>Submitted:</strong> {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
-            {% if post.text_content %}
-                <div class="card bg-light mb-2">
-                    <div class="card-body">{{ post.text_content }}</div>
-                </div>
-            {% endif %}
-            {% if post.image_filename %}
-                <div class="text-center mb-2">
-                    <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" class="img-fluid rounded" style="max-height: 200px;" alt="Question image">
-                </div>
-            {% endif %}
-
-            <!-- Public Comments -->
-            <div class="mt-3">
-                <h6><i class="fas fa-comments"></i> Comments</h6>
-                <div class="comment-box" id="comments-{{ post.id }}" style="max-height: 200px; overflow-y: auto; background: var(--bs-body-bg); padding: 10px; border-radius: 5px; border: 1px solid var(--bs-border-color);">
-                    {% for comment in post.public_comments %}
-                        <div class="mb-2">
-                            <strong>{{ comment.name }}</strong> <small class="text-muted">{{ comment.created_at.strftime('%H:%M') }}</small><br>
-                            {{ comment.text }}
-                        </div>
-                    {% else %}
-                        <p class="text-muted">No comments yet.</p>
-                    {% endfor %}
-                </div>
-                <!-- Add comment form -->
-                <form method="POST" action="{{ url_for('index') }}" class="mt-2">
-                    {{ form.hidden_tag() }}
-                    <input type="hidden" name="post_id" value="{{ post.id }}">
-                    <div class="row g-2">
-                        <div class="col-md-3">
-                            {{ form.name(class="form-control form-control-sm", placeholder="Your name (optional)") }}
-                        </div>
-                        <div class="col-md-7">
-                            {{ form.text(class="form-control form-control-sm", placeholder="Your comment...") }}
-                        </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-paper-plane"></i></button>
-                        </div>
-                    </div>
-                </form>
-            </div>
+        <div class="feed-search-wrap">
+            <i class="fas fa-search"></i>
+            <input type="search" id="feedSearch" class="feed-search" placeholder="Search JUT # or text…">
         </div>
     </div>
+</div>
+
+<!-- The feed -->
+<div class="feed-list" id="posts-container">
+{% for post in posts %}
+    <article class="feed-card" data-post-id="{{ post.id }}" data-subject="{{ post.subject }}"
+             id="post-{{ post.id }}" tabindex="0" role="button" aria-expanded="false">
+        <div class="feed-card-header">
+            <span class="jut-chip">JUT #{{ post.jut_number }}</span>
+            <span class="subject-pill {{ post.subject }}">{{ post.subject.capitalize() }}</span>
+            <span class="time">{{ post.created_at.strftime('%b %d · %H:%M') }}</span>
+            <i class="fas fa-chevron-down expand-chevron"></i>
+        </div>
+
+        <div class="feed-card-preview">
+            <div class="text">
+                {% if post.text_content %}{{ post.text_content }}{% else %}<em class="text-muted">No additional text.</em>{% endif %}
+            </div>
+            {% if post.image_filename %}
+                <img class="thumb" src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" alt="" loading="lazy">
+            {% endif %}
+        </div>
+
+        <div class="feed-card-meta">
+            <span>
+                <i class="far fa-comment"></i>
+                <span class="comment-count" data-post-id="{{ post.id }}">{{ post.public_comments.count() }}</span>
+                <span class="cc-label">comments</span>
+            </span>
+        </div>
+
+        <div class="expandable">
+            <div class="expandable-inner">
+                <div class="feed-expanded">
+                    {% if post.text_content %}
+                        <div class="full-text">{{ post.text_content }}</div>
+                    {% endif %}
+                    {% if post.image_filename %}
+                        <div class="full-image-wrap">
+                            <img class="full-image" src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" alt="Question image">
+                        </div>
+                    {% endif %}
+
+                    <h6 class="section-label"><i class="fas fa-comments"></i> Comments</h6>
+                    <div class="comments-list" data-post-id="{{ post.id }}" id="comments-{{ post.id }}">
+                        {% for comment in post.public_comments %}
+                            <div class="comment-item" data-comment-id="{{ comment.id }}">
+                                <strong>{{ comment.name }}</strong>
+                                <small>{{ comment.created_at.strftime('%H:%M') }}</small>
+                                <div class="comment-body">{{ comment.text }}</div>
+                            </div>
+                        {% else %}
+                            <p class="no-comments">No comments yet. Be the first!</p>
+                        {% endfor %}
+                    </div>
+
+                    <form class="comment-form mt-3" data-post-id="{{ post.id }}">
+                        <div class="row g-2">
+                            <div class="col-md-3">
+                                <input type="text" name="cname" class="form-control form-control-sm" placeholder="Name (optional)" maxlength="100">
+                            </div>
+                            <div class="col-md-7">
+                                <input type="text" name="ctext" class="form-control form-control-sm" placeholder="Write a comment…" maxlength="500" required>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-paper-plane"></i></button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </article>
 {% else %}
-    <div class="alert alert-info">No questions posted yet. <a href="{{ url_for('student.post_question') }}">Submit one now!</a></div>
+    <div class="feed-empty" id="empty-state">
+        <i class="fas fa-inbox"></i>
+        <p>No questions yet. <a href="{{ url_for('student.post_question') }}">Be the first to submit one.</a></p>
+    </div>
 {% endfor %}
+</div>
 
-<!-- Socket.IO for real-time comments -->
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<div class="feed-empty d-none" id="no-match">
+    <i class="fas fa-search"></i>
+    <p>No questions match your search.</p>
+</div>
+
 <script>
-    (function() {
-        const socket = io();
+(function() {
+    const socket = window.appSocket;
+    if (!socket) { console.error('Socket not ready'); return; }
 
-        // Join rooms for each post to receive real-time comments
-        {% for post in posts %}
-            socket.emit('join_post', { post_id: '{{ post.id }}' });
-        {% endfor %}
+    const container   = document.getElementById('posts-container');
+    const searchInput = document.getElementById('feedSearch');
+    const noMatch     = document.getElementById('no-match');
+    let currentFilter = 'all';
 
-        // Listen for new public comments
-        socket.on('new_public_comment', function(data) {
-            const postId = data.post_id;
-            const commentBox = document.getElementById('comments-' + postId);
-            if (!commentBox) return;
-            // Remove "No comments" if present
-            const noComment = commentBox.querySelector('p.text-muted');
-            if (noComment) noComment.remove();
+    // ---- Join rooms ----
+    const rooms = ['feed'];
+    document.querySelectorAll('.feed-card').forEach(el => rooms.push('post_' + el.dataset.postId));
+    socket.emit('join_rooms', { rooms });
 
-            const div = document.createElement('div');
-            div.className = 'mb-2';
-            div.innerHTML = `<strong>${data.name}</strong> <small class="text-muted">${data.created_at}</small><br>${data.text}`;
-            commentBox.appendChild(div);
-            commentBox.scrollTop = commentBox.scrollHeight;
+    // ---------- Expand / collapse ----------
+    function openCard(card) {
+        document.querySelectorAll('.feed-card.open').forEach(c => {
+            if (c !== card) closeCard(c, /*silent*/ true);
         });
-    })();
+        card.classList.add('open');
+        card.setAttribute('aria-expanded', 'true');
+        history.replaceState(null, '', '#post-' + card.dataset.postId);
+    }
+    function closeCard(card, silent) {
+        card.classList.remove('open');
+        card.setAttribute('aria-expanded', 'false');
+        if (!silent) history.replaceState(null, '', location.pathname + location.search);
+    }
+    function toggleCard(card) {
+        card.classList.contains('open') ? closeCard(card) : openCard(card);
+    }
+
+    // Restore from URL hash
+    if (location.hash.startsWith('#post-')) {
+        const el = document.querySelector(location.hash);
+        if (el && el.classList.contains('feed-card')) openCard(el);
+    }
+
+    // Click delegation — anywhere on the card except the expanded region / interactive controls
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.feed-expanded')) return;
+        if (e.target.closest('button, a, input, textarea, select, label')) return;
+        const card = e.target.closest('.feed-card');
+        if (!card) return;
+        toggleCard(card);
+    });
+
+    // Keyboard: Enter / Space toggles when card is focused
+    document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const card = e.target.closest && e.target.closest('.feed-card');
+        if (!card || e.target !== card) return;
+        e.preventDefault();
+        toggleCard(card);
+    });
+
+    // ---------- Filters + search ----------
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.addEventListener('click', function() {
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            currentFilter = chip.dataset.filter;
+            applyFilter();
+        });
+    });
+    searchInput.addEventListener('input', applyFilter);
+
+    function applyFilter() {
+        const q = (searchInput.value || '').trim().toLowerCase();
+        let visible = 0;
+        document.querySelectorAll('.feed-card').forEach(card => {
+            const subj = card.dataset.subject;
+            const jut  = (card.querySelector('.jut-chip') || {}).textContent || '';
+            const text = card.querySelector('.feed-card-preview .text').textContent.toLowerCase();
+            const jutL = jut.toLowerCase();
+            const matchSubj = currentFilter === 'all' || subj === currentFilter;
+            const matchQ = !q || text.includes(q) || jutL.includes(q);
+            const show = matchSubj && matchQ;
+            card.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        noMatch.classList.toggle('d-none', visible > 0 || document.querySelectorAll('.feed-card').length === 0);
+    }
+
+    // ---------- Live: new post ----------
+    socket.on('new_post', function(p) {
+        const empty = document.getElementById('empty-state');
+        if (empty) empty.remove();
+        if (document.getElementById('post-' + p.id)) return;
+
+        const card = document.createElement('article');
+        card.className = 'feed-card';
+        card.dataset.postId = p.id;
+        card.dataset.subject = p.subject;
+        card.id = 'post-' + p.id;
+        card.tabIndex = 0;
+        card.setAttribute('role', 'button');
+        card.setAttribute('aria-expanded', 'false');
+        window.uiFade.in(card, 'up');
+        card.innerHTML = buildCardInner(p);
+
+        container.prepend(card);
+        socket.emit('join_rooms', { rooms: ['post_' + p.id] });
+        applyFilter();
+    });
+
+    function buildCardInner(p) {
+        const comments = (p.comments || []).map(c => `
+            <div class="comment-item" data-comment-id="${c.id}">
+                <strong>${escapeHtml(c.name)}</strong>
+                <small>${c.created_at_short}</small>
+                <div class="comment-body">${escapeHtml(c.text)}</div>
+            </div>`).join('');
+
+        return `
+            <div class="feed-card-header">
+                <span class="jut-chip">JUT #${escapeHtml(p.jut_number)}</span>
+                <span class="subject-pill ${p.subject}">${p.subject_label}</span>
+                <span class="time">just now <span class="new-badge">new</span></span>
+                <i class="fas fa-chevron-down expand-chevron"></i>
+            </div>
+            <div class="feed-card-preview">
+                <div class="text">${p.text_content ? escapeHtml(p.text_content) : '<em class="text-muted">No additional text.</em>'}</div>
+                ${p.image_url ? `<img class="thumb" src="${p.image_url}" alt="">` : ''}
+            </div>
+            <div class="feed-card-meta">
+                <span><i class="far fa-comment"></i>
+                    <span class="comment-count" data-post-id="${p.id}">${(p.comments || []).length}</span>
+                    <span class="cc-label">comments</span>
+                </span>
+            </div>
+            <div class="expandable">
+                <div class="expandable-inner">
+                    <div class="feed-expanded">
+                        ${p.text_content ? `<div class="full-text">${escapeHtml(p.text_content)}</div>` : ''}
+                        ${p.image_url ? `<div class="full-image-wrap"><img class="full-image" src="${p.image_url}" alt=""></div>` : ''}
+                        <h6 class="section-label"><i class="fas fa-comments"></i> Comments</h6>
+                        <div class="comments-list" data-post-id="${p.id}" id="comments-${p.id}">
+                            ${comments || '<p class="no-comments">No comments yet. Be the first!</p>'}
+                        </div>
+                        <form class="comment-form mt-3" data-post-id="${p.id}">
+                            <div class="row g-2">
+                                <div class="col-md-3"><input type="text" name="cname" class="form-control form-control-sm" placeholder="Name (optional)" maxlength="100"></div>
+                                <div class="col-md-7"><input type="text" name="ctext" class="form-control form-control-sm" placeholder="Write a comment…" maxlength="500" required></div>
+                                <div class="col-md-2"><button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-paper-plane"></i></button></div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    // ---------- Live: new comment ----------
+    socket.on('new_public_comment', function(c) {
+        const list = document.getElementById('comments-' + c.post_id);
+        const countEl = document.querySelector(`.comment-count[data-post-id="${c.post_id}"]`);
+        if (countEl) {
+            countEl.textContent = (parseInt(countEl.textContent, 10) || 0) + 1;
+        }
+        if (list) {
+            if (list.querySelector(`[data-comment-id="${c.id}"]`)) return;
+            const no = list.querySelector('.no-comments');
+            if (no) no.remove();
+            const div = document.createElement('div');
+            div.className = 'comment-item';
+            div.dataset.commentId = c.id;
+            div.innerHTML = `<strong>${escapeHtml(c.name)}</strong> <small>${c.created_at_short}</small><div class="comment-body">${escapeHtml(c.text)}</div>`;
+            list.appendChild(div);
+            window.uiFade.in(div, 'in');
+            list.scrollTop = list.scrollHeight;
+            list.scrollTop = list.scrollHeight;
+        }
+        // pulse the counter if the card is closed
+        const card = document.getElementById('post-' + c.post_id);
+        if (card && !card.classList.contains('open') && countEl) {
+            countEl.classList.add('pulse');
+            setTimeout(() => countEl.classList.remove('pulse'), 1500);
+        }
+    });
+
+    // ---------- Live: removed / archived ----------
+    socket.on('post_status_changed', d => removeCard(d.post_id));
+    socket.on('post_deleted',        d => removeCard(d.post_id));
+    function removeCard(id) {
+        const el = document.getElementById('post-' + id);
+        if (!el) return;
+        window.uiFade.out(el, applyFilter);
+    }
+
+    // ---------- Comment submit ----------
+    document.addEventListener('submit', function(e) {
+        const form = e.target.closest && e.target.closest('.comment-form');
+        if (!form) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const postId = parseInt(form.dataset.postId, 10);
+        const nameEl = form.querySelector('input[name="cname"]');
+        const textEl = form.querySelector('input[name="ctext"]');
+        const name = (nameEl.value || '').trim();
+        const text = (textEl.value || '').trim();
+        if (!text) return;
+        socket.emit('post_comment', { post_id: postId, name, text });
+        textEl.value = '';
+        textEl.focus();
+    });
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+})();
 </script>
 {% endblock %}

@@ -69,7 +69,7 @@
                 <i class="fas fa-check"></i> {{ vote_form.submit.label }}
             </button>
             {% if current_vote %}
-                <span class="ms-2 text-muted">(current vote: {{ current_vote.option }}{% if current_vote.option == 'NUMERICAL' %} = {{ current_vote.numerical_value }}{% endif %})</span>
+                <span class="ms-2 text-muted current-vote-hint">(current vote: {{ current_vote.option }}{% if current_vote.option == 'NUMERICAL' %} = {{ current_vote.numerical_value }}{% endif %})</span>
             {% endif %}
         </form>
     </div>
@@ -122,67 +122,114 @@
 </script>
 
 <!-- Socket.IO for real-time lecturer messages and public comments -->
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-    (function() {
-        const socket = io();
-        const postId = '{{ post.id }}';
+(function() {
+    const socket = window.appSocket;
+    const postId = {{ post.id }};
+    socket.emit('join_rooms', { rooms: ['post_' + postId] });
 
-        // Join the post room
-        socket.emit('join_post', { post_id: postId });
+    // ---- Vote form: intercept ----
+    const voteForm = document.querySelector('form[method="POST"]');
+    // there are two POST forms: vote form and chat form.
+    // Identify vote form by presence of input[name="option"].
+    const forms = document.querySelectorAll('form');
+    let voteFormEl = null, chatFormEl = null;
+    forms.forEach(f => {
+        if (f.querySelector('input[name="option"]')) voteFormEl = f;
+        if (f.querySelector('#lecturerMsg'))       chatFormEl = f;
+    });
 
-        // ---- Public comments ----
-        socket.on('new_public_comment', function(data) {
-            if (data.post_id != postId) return;
-            const container = document.getElementById('public-comments');
-            const noMsg = container.querySelector('p.text-muted');
-            if (noMsg) noMsg.remove();
-            const div = document.createElement('div');
-            div.className = 'mb-2';
-            div.innerHTML = `<strong>${data.name}</strong> <small class="text-muted">${data.created_at}</small><br>${data.text}`;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
+    // Show/hide numerical input
+    const optionRadios = document.querySelectorAll('input[name="option"]');
+    const numericalDiv = document.getElementById('numericalInput');
+    function toggleNumerical() {
+        const sel = document.querySelector('input[name="option"]:checked');
+        numericalDiv.style.display = (sel && sel.value === 'NUMERICAL') ? 'block' : 'none';
+    }
+    optionRadios.forEach(r => r.addEventListener('change', toggleNumerical));
+    toggleNumerical();
+
+    // Vote submit
+    if (voteFormEl) {
+        voteFormEl.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const sel = document.querySelector('input[name="option"]:checked');
+            if (!sel) { alert('Please select an option.'); return; }
+            const option = sel.value;
+            let numerical_value = null;
+            if (option === 'NUMERICAL') {
+                const nv = document.querySelector('input[name="numerical_value"]').value;
+                if (!nv) { alert('Enter a numerical value.'); return; }
+                numerical_value = parseFloat(nv);
+            }
+            socket.emit('cast_vote', { post_id: postId, option, numerical_value });
         });
+    }
 
-        // ---- Lecturer messages ----
-        // We'll intercept the form submission to send via socket, and also handle normal POST fallback.
-        const chatForm = document.getElementById('lecturerChatForm');
-        const msgInput = document.getElementById('lecturerMsg');
+    // Chat submit
+    const chatForm = document.getElementById('lecturerChatForm');
+    const msgInput = document.getElementById('lecturerMsg');
+    if (chatForm) {
         chatForm.addEventListener('submit', function(e) {
-            e.preventDefault(); // prevent normal POST
+            e.preventDefault();
             const msg = msgInput.value.trim();
             if (!msg) return;
-            // Emit via socket
-            socket.emit('new_lecturer_message', {
-                post_id: postId,
-                message: msg
-            });
-            // Clear input
+            socket.emit('send_lecturer_message', { post_id: postId, message: msg });
             msgInput.value = '';
-            // Optionally display own message immediately (will be broadcast back, but we can also optimistic append)
-            // We'll rely on broadcast; but include_self=False, so we'll add it ourselves optimistically.
-            const container = document.getElementById('lecturer-chat');
-            const noMsg = container.querySelector('p.text-muted');
-            if (noMsg) noMsg.remove();
-            const div = document.createElement('div');
-            div.className = 'mb-2';
-            div.innerHTML = `<strong>{{ current_user.name }}</strong> <small class="text-muted">just now</small><br>${msg}`;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
         });
+    }
 
-        // Listen for new lecturer messages (from others)
-        socket.on('new_lecturer_message', function(data) {
-            if (data.post_id != postId) return;
-            const container = document.getElementById('lecturer-chat');
-            const noMsg = container.querySelector('p.text-muted');
-            if (noMsg) noMsg.remove();
-            const div = document.createElement('div');
-            div.className = 'mb-2';
-            div.innerHTML = `<strong>${data.lecturer_name}</strong> <small class="text-muted">${data.created_at}</small><br>${data.message}`;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-        });
-    })();
+    // ---- Received events ----
+    socket.on('new_public_comment', function(c) {
+        if (c.post_id !== postId) return;
+        const box = document.getElementById('public-comments');
+        if (!box) return;
+        const no = box.querySelector('p.text-muted');
+        if (no) no.remove();
+        if (box.querySelector(`[data-cid="${c.id}"]`)) return;
+        const div = document.createElement('div');
+        div.dataset.cid = c.id;
+        div.innerHTML = `<strong>${escapeHtml(c.name)}</strong> <small>${c.created_at_short}</small><br>${escapeHtml(c.text)}`;
+        box.appendChild(div);
+        window.uiFade.in(div, 'in');
+        box.scrollTop = box.scrollHeight;
+    });
+
+    socket.on('new_lecturer_message', function(m) {
+        if (m.post_id !== postId) return;
+        const box = document.getElementById('lecturer-chat');
+        const no = box.querySelector('p.text-muted');
+        if (no) no.remove();
+        const div = document.createElement('div');
+        div.innerHTML = `<strong>${escapeHtml(m.lecturer_name)}</strong> <small>${m.created_at_short}</small><br>${escapeHtml(m.message)}`;
+        box.appendChild(div);
+        window.uiFade.in(div, 'in');        // ← added
+        box.scrollTop = box.scrollHeight;
+    });
+
+    socket.on('your_vote_saved', function(v) {
+        if (v.post_id !== postId) return;
+        // Update the "(current vote: …)" hint without reload
+        let hint = document.querySelector('.current-vote-hint');
+        if (!hint) {
+            hint = document.createElement('span');
+            hint.className = 'ms-2 text-muted current-vote-hint';
+            voteFormEl.appendChild(hint);
+        }
+        hint.textContent = `(current vote: ${v.option}${v.option === 'NUMERICAL' ? ' = ' + v.numerical_value : ''})`;
+    });
+
+    socket.on('post_status_changed', function(d) {
+        if (d.post_id !== postId || d.status !== 'updated') return;
+        const banner = document.createElement('div');
+        banner.className = 'alert alert-warning mt-3';
+        banner.innerHTML = '<i class="fas fa-check-double"></i> This question has been marked <strong>updated</strong> by the admin.';
+        document.querySelector('main .container-xl, main').prepend(banner);
+    });
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+})();
 </script>
 {% endblock %}

@@ -2,6 +2,9 @@
    JUT RESOLVER — Design System
    Warm editorial aesthetic · Fraunces + Inter Tight
    ============================================================ */
+:root {
+    --acchue: 360;
+}
 
 /* ---------- 1. Design tokens ---------- */
 :root, [data-bs-theme="light"] {
@@ -23,10 +26,10 @@
   --text-inverse:   #FAF7F2;
 
   /* Accent (Claude-ish terracotta) */
-  --accent:        #D97757;
-  --accent-hover:  #C15F3C;
-  --accent-subtle: #F6DED2;
-  --accent-ring:   rgba(217, 119, 87, 0.18);
+  --accent:        hwb(var(--acchue) 34% 15%);
+  --accent-hover:  hwb(var(--acchue) 24% 24%);
+  --accent-subtle: hwb(var(--acchue) 82% 4%);
+  --accent-ring:   hwb(var(--acchue) 34% 15% / 0.18);
 
   /* Semantic */
   --success: #6B8E5A;
@@ -76,10 +79,10 @@
   --text-tertiary:  #867E72;
   --text-inverse:   #171614;
 
-  --accent:        #E08A6B;
-  --accent-hover:  #EBA080;
-  --accent-subtle: #3A261E;
-  --accent-ring:   rgba(224, 138, 107, 0.22);
+  --accent:        hwb(var(--acchue) 42% 12%);
+  --accent-hover:  hwb(var(--acchue) 50% 8%);
+  --accent-subtle: hwb(var(--acchue) 12% 77%);
+  --accent-ring:   hwb(var(--acchue) 42% 12% / 0.22);
 
   --success: #8AAA78;
   --success-subtle: #29321F;
@@ -104,7 +107,7 @@
 }
 
 /* ---------- 2. Base ---------- */
-*, *::before, *::after { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; transition: 0.3s ease}
 
 html { scroll-behavior: smooth; }
 
@@ -208,10 +211,13 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
-  background: var(--accent);
+  background-image: url('/static/logo.png');
+  background-size: 100%;      /* 👈 Forces the image to scale down into the 28px box */
+  background-repeat: no-repeat;   /* 👈 Prevents the image from tiling */
+  background-position: center;    /* 👈 Centers the image perfectly */
   color: #fff;
   font-family: var(--font-display);
   font-style: italic;
@@ -427,7 +433,7 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
   color: #fff;
 }
 
-.btn-sm { padding: 0.35rem 0.75rem; font-size: 0.82rem; border-radius: 8px; }
+.btn-sm { padding: 0.9rem 0.75rem; font-size: 0.82rem; border-radius: 8px; }
 .btn-lg { padding: 0.75rem 1.4rem; font-size: 1rem; border-radius: var(--r-md); }
 
 /* ---------- 7. Forms ---------- */
@@ -718,4 +724,453 @@ input[type="file"].form-control::file-selector-button:hover {
   h2 { font-size: 1.35rem; }
   .navbar-brand { font-size: 1.05rem; }
   .nav-link { padding: 0.5rem 0.65rem !important; }
+}
+
+
+
+
+
+
+/* ============================================================
+   FEED — compact timeline with inline expand
+   ============================================================ */
+
+/* --- Header above the toolbar --- */
+.feed-header h1 {
+  margin-bottom: 0.35rem;
+}
+
+/* --- Sticky toolbar with filters + search --- */
+.feed-toolbar {
+  position: sticky;
+  top: 60px;
+  z-index: 100;
+  margin: 0 -1rem 1.25rem;
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--bg-primary) 92%, transparent);
+  backdrop-filter: saturate(180%) blur(14px);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+
+.feed-toolbar-inner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.feed-filter-chips {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.4;
+}
+.filter-chip:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+.filter-chip.active {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: var(--bg-primary);
+}
+
+.feed-search-wrap {
+  position: relative;
+  margin-left: auto;
+  flex: 1;
+  max-width: 300px;
+}
+.feed-search-wrap i {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+.feed-search {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 0.4rem 0.9rem 0.4rem 2rem;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.feed-search:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+/* --- Feed list --- */
+.feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+/* --- Compact card --- */
+.feed-card {
+  position: relative;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 0.95rem 1.15rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  outline: none;
+}
+.feed-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+.feed-card:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+.feed-card.open {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+  cursor: default;
+}
+
+/* --- Card header row --- */
+.feed-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.4rem;
+}
+
+.jut-chip {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.82rem;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+}
+
+.subject-pill {
+  font-family: var(--font-sans);
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.22em 0.65em;
+  border-radius: var(--r-pill);
+  line-height: 1.4;
+}
+.subject-pill.phy   { background: #E4EDF4; color: #3D6685; }
+.subject-pill.chem  { background: #F3E6D0; color: #8A6124; }
+.subject-pill.maths { background: #E4EBDC; color: #527045; }
+[data-bs-theme="dark"] .subject-pill.phy   { background: #1F2A31; color: #86A5B8; }
+[data-bs-theme="dark"] .subject-pill.chem  { background: #322818; color: #D4A967; }
+[data-bs-theme="dark"] .subject-pill.maths { background: #29321F; color: #8AAA78; }
+
+.feed-card .time {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.new-badge {
+  font-family: var(--font-sans);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.15em 0.5em;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: #fff;
+  animation: pulse-new 2.5s ease-in-out infinite;
+}
+@keyframes pulse-new {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.65; }
+}
+
+.expand-chevron {
+  color: var(--text-tertiary);
+  font-size: 0.72rem;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+.feed-card.open .expand-chevron {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+/* --- Card preview row --- */
+.feed-card-preview {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+.feed-card-preview .text {
+  flex: 1;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+.feed-card.open .feed-card-preview .text {
+  display: none; /* hidden when expanded — full text shown instead */
+}
+.feed-card-preview .thumb {
+  width: 68px;
+  height: 68px;
+  border-radius: var(--r-md);
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+.feed-card.open .feed-card-preview .thumb {
+  display: none;
+}
+
+/* --- Meta row --- */
+.feed-card-meta {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.55rem;
+  font-size: 0.74rem;
+  color: var(--text-tertiary);
+  align-items: center;
+}
+.feed-card-meta i {
+  font-size: 0.9em;
+  margin-right: 0.25em;
+  opacity: 0.85;
+}
+.comment-count.pulse {
+  display: inline-block;
+  animation: count-pulse 1.5s ease;
+  color: var(--accent);
+  font-weight: 600;
+}
+@keyframes count-pulse {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+/* --- Smooth inline expand --- */
+.expandable {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.feed-card.open .expandable {
+  grid-template-rows: 1fr;
+}
+.expandable > .expandable-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.feed-expanded {
+  padding-top: 1rem;
+  margin-top: 0.85rem;
+  border-top: 1px dashed var(--border);
+}
+
+.full-text {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--text-primary);
+  margin-bottom: 0.85rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.full-image-wrap {
+  text-align: center;
+  margin: 0.75rem 0 1rem;
+}
+.full-image {
+  max-width: 100%;
+  max-height: 420px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.section-label {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin: 1rem 0 0.5rem;
+}
+.section-label i { margin-right: 0.3em; }
+
+/* --- Comments list (capped with internal scroll) --- */
+.comments-list {
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 0.35rem 0.9rem;
+}
+.comment-item {
+  padding: 0.55rem 0;
+  border-bottom: 1px dashed color-mix(in srgb, var(--border-strong) 55%, transparent);
+}
+.comment-item:last-child { border-bottom: none; }
+.comment-item strong {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+.comment-item small {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  margin-left: 0.4rem;
+}
+.comment-body {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin-top: 0.15rem;
+  word-break: break-word;
+}
+.no-comments {
+  font-style: italic;
+  font-size: 0.82rem;
+  color: var(--text-tertiary) !important;
+  text-align: center;
+  padding: 0.75rem 0;
+  margin: 0;
+}
+
+/* --- Empty states --- */
+.feed-empty {
+  text-align: center;
+  padding: 3.5rem 1rem;
+  color: var(--text-tertiary);
+}
+.feed-empty i {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+  display: block;
+  opacity: 0.5;
+}
+.feed-empty p { margin: 0; font-size: 0.92rem; }
+
+/* --- Responsive tweaks --- */
+@media (max-width: 640px) {
+  .feed-toolbar { top: 54px; }
+  .feed-search-wrap { max-width: 100%; margin-left: 0; width: 100%;}
+  .feed-card { padding: 0.85rem 1rem; }
+  .feed-card-preview .thumb { width: 56px; height: 56px; }
+  .feed-card-meta { font-size: 0.7rem; }
+  .feed-toolbar-inner { flex-direction: column; width: 100%}
+
+}
+
+
+
+/* ============================================================
+   STICKY FOOTER
+   Keeps footer at the bottom of the viewport when content
+   is shorter than the screen (e.g. login pages).
+   ============================================================ */
+html, body {
+  min-height: 100vh;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Main grows to push footer down */
+body > main {
+  flex: 1 0 auto;
+}
+
+/* Footer never shrinks */
+body > .footer {
+  flex-shrink: 0;
+  margin-top: 0; /* remove the old auto-margin since flex handles it now */
+}
+
+
+
+/* ============================================================
+   MOTION — universal fade in / fade out utilities
+   Use .fade-in / .fade-in-up when adding an element,
+   and .fade-out right before removing it.
+   ============================================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-4px); }
+}
+
+.fade-in    { animation: fadeIn    0.35s ease both; }
+.fade-in-up { animation: fadeInUp  0.4s cubic-bezier(0.4, 0, 0.2, 1) both; }
+.fade-out   { animation: fadeOut   0.28s ease both; pointer-events: none; }
+
+/* Smoother inline expansion: also fade the inner content as the panel grows */
+.feed-expanded {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.4s ease 0.06s, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.06s;
+}
+.feed-card.open .feed-expanded {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* When we close a card, kill the fade-in delay so it collapses cleanly */
+.feed-card:not(.open) .feed-expanded {
+  transition-delay: 0s;
+}
+
+/* Respect users who prefer less motion */
+@media (prefers-reduced-motion: reduce) {
+  .fade-in, .fade-in-up, .fade-out,
+  .expandable, .feed-expanded { animation: none !important; transition: none !important; }
 }
