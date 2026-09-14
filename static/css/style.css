@@ -1,21 +1,721 @@
-/* Any custom styles */
-body {
-    transition: background-color 0.2s ease, color 0.2s ease;
-}
-.card {
-    margin-bottom: 1.5rem;
-}
-.chat-box {
-    background-color: var(--bs-body-bg);
-    border: 1px solid var(--bs-border-color);
+/* ============================================================
+   JUT RESOLVER — Design System
+   Warm editorial aesthetic · Fraunces + Inter Tight
+   ============================================================ */
+
+/* ---------- 1. Design tokens ---------- */
+:root, [data-bs-theme="light"] {
+  /* Fonts */
+  --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+  --font-sans:    'Inter Tight', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:    'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+  /* Surfaces */
+  --bg-primary:   #FAF7F2;
+  --bg-secondary: #F2EDE4;
+  --bg-tertiary:  #EAE4D8;
+  --bg-elevated:  #FFFFFF;
+
+  /* Text */
+  --text-primary:   #1F1E1D;
+  --text-secondary: #5C564D;
+  --text-tertiary:  #8D857A;
+  --text-inverse:   #FAF7F2;
+
+  /* Accent (Claude-ish terracotta) */
+  --accent:        #D97757;
+  --accent-hover:  #C15F3C;
+  --accent-subtle: #F6DED2;
+  --accent-ring:   rgba(217, 119, 87, 0.18);
+
+  /* Semantic */
+  --success: #6B8E5A;
+  --success-subtle: #E4EBDC;
+  --info:    #5F7F94;
+  --info-subtle: #DEE7EC;
+  --warning: #B8894A;
+  --warning-subtle: #F3E6D0;
+  --danger:  #B95C56;
+  --danger-subtle: #F1DAD8;
+
+  /* Borders */
+  --border:        #E5DFD2;
+  --border-strong: #D0C8B8;
+
+  /* Elevation */
+  --shadow-xs: 0 1px 2px rgba(31, 30, 29, 0.04);
+  --shadow-sm: 0 2px 6px rgba(31, 30, 29, 0.05);
+  --shadow-md: 0 8px 24px rgba(31, 30, 29, 0.07);
+  --shadow-lg: 0 20px 48px rgba(31, 30, 29, 0.10);
+
+  /* Radii */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-pill: 999px;
+
+  /* Bootstrap overrides */
+  --bs-body-bg: var(--bg-primary);
+  --bs-body-color: var(--text-primary);
+  --bs-border-color: var(--border);
+  --bs-primary: var(--accent);
+  --bs-primary-rgb: 217, 119, 87;
+  --bs-link-color: var(--accent);
+  --bs-link-hover-color: var(--accent-hover);
 }
 
-.card-body {
-    flex: 1 1 auto;
-    padding: var(--bs-card-spacer-y) var(--bs-card-spacer-x);
-    color: var(--bs-card-color);
-    background: var(--bs-card-bg);
-    border: 1px solid white;
-    outline: 1px solid white;
+[data-bs-theme="dark"] {
+  --bg-primary:   #171614;
+  --bg-secondary: #1F1E1B;
+  --bg-tertiary:  #2A2723;
+  --bg-elevated:  #1E1D1A;
+
+  --text-primary:   #F0EBE2;
+  --text-secondary: #B5AC9F;
+  --text-tertiary:  #867E72;
+  --text-inverse:   #171614;
+
+  --accent:        #E08A6B;
+  --accent-hover:  #EBA080;
+  --accent-subtle: #3A261E;
+  --accent-ring:   rgba(224, 138, 107, 0.22);
+
+  --success: #8AAA78;
+  --success-subtle: #29321F;
+  --info:    #86A5B8;
+  --info-subtle: #1F2A31;
+  --warning: #D4A967;
+  --warning-subtle: #322818;
+  --danger:  #D5796F;
+  --danger-subtle: #3A211F;
+
+  --border:        #2C2A26;
+  --border-strong: #403D36;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.5);
+
+  --bs-body-bg: var(--bg-primary);
+  --bs-body-color: var(--text-primary);
+  --bs-border-color: var(--border);
 }
-/* Dark mode overrides are handled by Bootstrap's data-bs-theme */
+
+/* ---------- 2. Base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  background-image:
+    radial-gradient(ellipse 70% 40% at 50% -10%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 65%),
+    radial-gradient(ellipse 50% 40% at 100% 0%, color-mix(in srgb, var(--accent) 4%, transparent), transparent 60%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  font-feature-settings: 'ss01', 'cv05', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+main.container-xl { padding-top: 3rem; padding-bottom: 4rem; }
+
+/* ---------- 3. Typography ---------- */
+h1, h2, h3, h4, h5, h6, .display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-variation-settings: 'SOFT' 40, 'WONK' 1, 'opsz' 32;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--text-primary);
+  margin: 0 0 0.6em;
+}
+
+h1 { font-size: clamp(2rem, 3.5vw, 3rem); }
+h2 { font-size: clamp(1.5rem, 2.4vw, 2rem); }
+h3 { font-size: 1.4rem; }
+h4 { font-size: 1.2rem; }
+h5 { font-size: 1.05rem; }
+h6 { font-size: 0.95rem; font-variation-settings: 'SOFT' 40, 'WONK' 1, 'opsz' 20; }
+
+p { color: var(--text-secondary); margin: 0 0 1rem; }
+
+.lead {
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+}
+
+strong, b { color: var(--text-primary); font-weight: 600; }
+
+small, .small { color: var(--text-tertiary); }
+
+/* Numerals / JUT IDs get mono */
+.jut-id, code, kbd, pre {
+  font-family: var(--font-mono);
+  font-feature-settings: 'tnum';
+}
+
+code {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  padding: 0.15em 0.4em;
+  border-radius: var(--r-sm);
+  font-size: 0.85em;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.15s ease;
+  text-underline-offset: 3px;
+}
+a:hover { color: var(--accent-hover); text-decoration: underline; }
+
+/* ---------- 4. Navbar ---------- */
+.navbar {
+  background: color-mix(in srgb, var(--bg-primary) 82%, transparent) !important;
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0.85rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+}
+
+.navbar-brand {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.2rem;
+  font-variation-settings: 'SOFT' 50, 'WONK' 1, 'opsz' 28;
+  letter-spacing: -0.025em;
+  color: var(--text-primary) !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+}
+
+.navbar-brand .brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 0.95rem;
+  font-variation-settings: 'SOFT' 60, 'WONK' 1;
+}
+
+.navbar-brand:hover { text-decoration: none; }
+
+.nav-link {
+  font-size: 0.9rem !important;
+  font-weight: 500;
+  color: var(--text-secondary) !important;
+  padding: 0.45rem 0.85rem !important;
+  border-radius: var(--r-md);
+  transition: all 0.15s ease;
+}
+
+.nav-link:hover, .nav-link:focus {
+  color: var(--text-primary) !important;
+  background: var(--bg-secondary);
+  text-decoration: none;
+}
+
+.nav-link i { font-size: 0.8em; opacity: 0.85; margin-right: 0.15em; }
+
+.navbar-toggler {
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--r-md);
+}
+.navbar-toggler:focus { box-shadow: 0 0 0 3px var(--accent-ring); }
+.navbar-toggler-icon {
+  background-image: none;
+  position: relative;
+  width: 18px; height: 18px;
+}
+.navbar-toggler-icon::before,
+.navbar-toggler-icon::after,
+.navbar-toggler-icon {
+  color: var(--text-primary);
+}
+.navbar-toggler-icon::before,
+.navbar-toggler-icon::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: var(--text-primary);
+  border-radius: 2px;
+}
+.navbar-toggler-icon::before { top: 4px; }
+.navbar-toggler-icon::after  { bottom: 4px; }
+
+/* Theme toggle */
+.theme-toggle {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+  margin-right: 0.35rem;
+}
+.theme-toggle:hover {
+  background: var(--bg-tertiary);
+  color: var(--accent);
+  transform: rotate(-15deg);
+  border-color: var(--border-strong);
+}
+
+/* ---------- 5. Cards ---------- */
+.card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong);
+}
+
+.card-body { padding: 1.5rem; }
+
+.card-header {
+  padding: 1rem 1.5rem;
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  font-weight: 500;
+}
+
+.card-header h4, .card-header h5, .card-header h6 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-variation-settings: 'SOFT' 40, 'WONK' 1, 'opsz' 22;
+}
+
+/* Coloured left accents on card headers */
+.card-header.bg-primary::before,
+.card-header.bg-success::before,
+.card-header.bg-info::before,
+.card-header.bg-warning::before,
+.card-header.bg-danger::before,
+.card-header.bg-secondary::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+.card-header.bg-primary::before   { background: var(--accent); }
+.card-header.bg-success::before   { background: var(--success); }
+.card-header.bg-info::before      { background: var(--info); }
+.card-header.bg-warning::before   { background: var(--warning); }
+.card-header.bg-danger::before    { background: var(--danger); }
+.card-header.bg-secondary::before { background: var(--text-tertiary); }
+
+/* Neutralise Bootstrap coloured headers */
+.card-header.bg-primary,
+.card-header.bg-success,
+.card-header.bg-info,
+.card-header.bg-warning,
+.card-header.bg-danger,
+.card-header.bg-secondary {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ---------- 6. Buttons ---------- */
+.btn {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.9rem;
+  letter-spacing: -0.005em;
+  border-radius: var(--r-md);
+  padding: 0.55rem 1.1rem;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  line-height: 1.2;
+}
+.btn:focus, .btn:focus-visible {
+  box-shadow: 0 0 0 3px var(--accent-ring);
+  outline: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover, .btn-primary:focus {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 32%, transparent);
+}
+
+.btn-success {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+.btn-success:hover { background: color-mix(in srgb, var(--success) 85%, black); border-color: color-mix(in srgb, var(--success) 85%, black); color: #fff; transform: translateY(-1px); }
+
+.btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+.btn-danger:hover { background: color-mix(in srgb, var(--danger) 85%, black); border-color: color-mix(in srgb, var(--danger) 85%, black); color: #fff; transform: translateY(-1px); }
+
+.btn-warning {
+  background: var(--warning);
+  border-color: var(--warning);
+  color: #fff;
+}
+.btn-warning:hover { background: color-mix(in srgb, var(--warning) 85%, black); border-color: color-mix(in srgb, var(--warning) 85%, black); color: #fff; }
+
+.btn-secondary {
+  background: var(--bg-secondary);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+.btn-secondary:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.btn-outline-primary {
+  background: transparent;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-outline-primary:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-sm { padding: 0.35rem 0.75rem; font-size: 0.82rem; border-radius: 8px; }
+.btn-lg { padding: 0.75rem 1.4rem; font-size: 1rem; border-radius: var(--r-md); }
+
+/* ---------- 7. Forms ---------- */
+.form-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 0.45rem;
+}
+
+.form-control, .form-select {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 0.6rem 0.9rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+  outline: none;
+}
+
+.form-control::placeholder { color: var(--text-tertiary); opacity: 0.85; }
+
+textarea.form-control { min-height: 90px; line-height: 1.55; }
+
+/* Radio / checkbox */
+.form-check-input {
+  width: 1.05em; height: 1.05em;
+  margin-top: 0.2em;
+  background-color: var(--bg-elevated);
+  border: 1.5px solid var(--border-strong);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.form-check-input:checked {
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+.form-check-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+.form-check-input[type="radio"] { border-radius: 50%; }
+.form-check-label { color: var(--text-primary); cursor: pointer; font-size: 0.95rem; }
+
+/* File input */
+input[type="file"].form-control {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.88rem;
+}
+input[type="file"].form-control::file-selector-button {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.82rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 0.3rem 0.75rem;
+  margin-right: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+input[type="file"].form-control::file-selector-button:hover {
+  background: var(--bg-tertiary);
+}
+
+/* ---------- 8. Alerts ---------- */
+.alert {
+  border-radius: var(--r-lg);
+  border: 1px solid transparent;
+  padding: 0.9rem 1.2rem;
+  font-size: 0.92rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-xs);
+}
+.alert-success { background: var(--success-subtle); color: var(--success); border-color: color-mix(in srgb, var(--success) 25%, transparent); }
+.alert-info    { background: var(--info-subtle);    color: var(--info);    border-color: color-mix(in srgb, var(--info) 25%, transparent); }
+.alert-warning { background: var(--warning-subtle); color: var(--warning); border-color: color-mix(in srgb, var(--warning) 25%, transparent); }
+.alert-danger  { background: var(--danger-subtle);  color: var(--danger);  border-color: color-mix(in srgb, var(--danger) 25%, transparent); }
+
+.alert .btn-close { opacity: 0.55; }
+.alert .btn-close:hover { opacity: 1; }
+
+/* ---------- 9. Badges ---------- */
+.badge {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  padding: 0.35em 0.7em;
+  border-radius: var(--r-pill);
+  text-transform: none;
+}
+.badge.bg-secondary {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* ---------- 10. Tables ---------- */
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-border-color: var(--border);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  border-color: var(--border);
+}
+.table > :not(caption) > * > * { padding: 0.85rem 1rem; }
+.table thead th, .table .table-dark th {
+  background: var(--bg-secondary) !important;
+  color: var(--text-tertiary) !important;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-strong) !important;
+}
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  background: color-mix(in srgb, var(--bg-secondary) 55%, transparent);
+}
+.table-hover > tbody > tr:hover > * {
+  background: var(--accent-subtle);
+  color: var(--text-primary);
+}
+.table-responsive {
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* ---------- 11. List groups ---------- */
+.list-group { border-radius: var(--r-lg); overflow: hidden; }
+.list-group-item {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-left: none; border-right: none;
+  padding: 1.15rem 1.35rem;
+  transition: background 0.15s ease;
+}
+.list-group-item:first-child { border-top: none; }
+.list-group-item:last-child  { border-bottom: none; }
+.list-group-item-action:hover,
+.list-group-item-action:focus {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.list-group-item h5 {
+  font-family: var(--font-display);
+  font-variation-settings: 'SOFT' 40, 'WONK' 1, 'opsz' 22;
+  font-size: 1.05rem;
+  margin-bottom: 0.25rem;
+  letter-spacing: -0.015em;
+}
+.list-group-item small { color: var(--text-tertiary); font-size: 0.78rem; }
+
+/* ---------- 12. Chat & comment boxes ---------- */
+.chat-box, [id^="comments-"], #public-comments, #lecturer-chat {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-md) !important;
+  padding: 1rem 1.1rem !important;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--text-primary);
+}
+.chat-box > div, [id^="comments-"] > div, #public-comments > div, #lecturer-chat > div {
+  padding: 0.6rem 0;
+  border-bottom: 1px dashed color-mix(in srgb, var(--border-strong) 60%, transparent);
+  color: var(--text-secondary);
+}
+.chat-box > div:last-child,
+[id^="comments-"] > div:last-child,
+#public-comments > div:last-child,
+#lecturer-chat > div:last-child { border-bottom: none; }
+
+.chat-box strong,
+[id^="comments-"] strong,
+#public-comments strong,
+#lecturer-chat strong {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.chat-box small,
+[id^="comments-"] small,
+#public-comments small,
+#lecturer-chat small {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  margin-left: 0.4rem;
+}
+
+/* Inline "no messages" text */
+.chat-box p.text-muted,
+[id^="comments-"] p.text-muted,
+#public-comments p.text-muted,
+#lecturer-chat p.text-muted {
+  color: var(--text-tertiary) !important;
+  font-style: italic;
+  font-size: 0.88rem;
+  text-align: center;
+  padding: 0.6rem 0;
+  margin: 0;
+}
+
+/* ---------- 13. Images in posts ---------- */
+.card img.img-fluid,
+.card img.rounded {
+  border-radius: var(--r-md) !important;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ---------- 14. Footer ---------- */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 1.5rem 0;
+  margin-top: 4rem;
+  text-align: center;
+}
+.footer p {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-variation-settings: 'SOFT' 60, 'WONK' 1;
+  color: var(--text-tertiary);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* ---------- 15. Scrollbars ---------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--r-pill);
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+/* ---------- 16. Utilities ---------- */
+.text-muted { color: var(--text-tertiary) !important; }
+.bg-light   { background: var(--bg-secondary) !important; }
+.border     { border-color: var(--border) !important; }
+
+/* Number styling for JUT display */
+.jut-number {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  letter-spacing: -0.01em;
+}
+
+/* ---------- 17. Animations ---------- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card, .list-group-item {
+  animation: fadeInUp 0.35s ease both;
+}
+
+/* ---------- 18. Responsive ---------- */
+@media (max-width: 768px) {
+  main.container-xl { padding-top: 1.5rem; padding-bottom: 2rem; }
+  .card-body { padding: 1.15rem; }
+  .card-header { padding: 0.9rem 1.15rem; }
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.35rem; }
+  .navbar-brand { font-size: 1.05rem; }
+  .nav-link { padding: 0.5rem 0.65rem !important; }
+}
